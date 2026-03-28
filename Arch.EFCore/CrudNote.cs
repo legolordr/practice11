@@ -7,6 +7,7 @@ public class CrudNote
     public static async Task<Note> Create(string text, DateTimeOffset created)
     {
         await using var db = new DataContext();
+        await db.Database.EnsureCreatedAsync();
         var note = new Note
         {
             Text = text,
@@ -20,6 +21,7 @@ public class CrudNote
     public static async Task<List<Note>> Read(string search, CancellationToken ct = default)
     {
         await using var db = new DataContext();
+        await db.Database.EnsureCreatedAsync();
         var result = await db.Notes.Where(x => EF.Functions.
             Like(x.Text, $"%{search}%")).ToListAsync(ct);
         return result;
