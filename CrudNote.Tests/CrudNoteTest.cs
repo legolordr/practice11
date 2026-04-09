@@ -5,12 +5,24 @@ using Xunit.Sdk;
 
 namespace CrudNote.Tests;
 
-public class CrudNoteTest
+public class CrudNoteTest : IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
     public CrudNoteTest(ITestOutputHelper output)
     {
         _output = output;
+    }
+
+    public async Task InitializeAsync()
+    {
+        await using var db = new DataContext();
+        await db.Database.EnsureCreatedAsync();
+    }
+
+    public async Task DisposeAsync()
+    {
+        await using var db = new DataContext();
+        await  db.Database.EnsureDeletedAsync();
     }
 
     [Theory]
@@ -20,7 +32,8 @@ public class CrudNoteTest
     public async Task Create_TextTimeCreated_Success(string text, DateTimeOffset created)
     {
         //Act
-        var note = await Arch.EFCore.CrudNote.Create(text, created);
+        var user = await CrudUser.Create("Invoker");
+        var note = await Arch.EFCore.CrudNote.Create(text, created,user.Id);
 
         //Assert
         Assert.NotNull(note);
@@ -34,8 +47,9 @@ public class CrudNoteTest
     public async Task Read_AnySearch_Success()
     {
         //Arrange
-        await Arch.EFCore.CrudNote.Create("hello world", DateTimeOffset.UtcNow);
-        await Arch.EFCore.CrudNote.Create("test note", DateTimeOffset.UtcNow);
+        var user = await CrudUser.Create("Invoker");
+        await Arch.EFCore.CrudNote.Create("hello world", DateTimeOffset.UtcNow,user.Id);
+        await Arch.EFCore.CrudNote.Create("test note", DateTimeOffset.UtcNow,user.Id);
 
         //Act
         var resultHello = await Arch.EFCore.CrudNote.Read("hello");
@@ -65,8 +79,9 @@ public class CrudNoteTest
     public async Task Read_AnySearch_ListIsEmpty()
     {
         //Arrange
-        await Arch.EFCore.CrudNote.Create("hello world", DateTimeOffset.UtcNow);
-        await Arch.EFCore.CrudNote.Create("test note", DateTimeOffset.UtcNow);
+        var user = await CrudUser.Create("Invoker");
+        await Arch.EFCore.CrudNote.Create("hello world", DateTimeOffset.UtcNow,user.Id);
+        await Arch.EFCore.CrudNote.Create("test note", DateTimeOffset.UtcNow,user.Id);
 
         //Act
         var resultHello = await Arch.EFCore.CrudNote.Read("zxc");
@@ -85,8 +100,9 @@ public class CrudNoteTest
     public async Task Read_AnyId_SpecificNote()
     {
         //Arrange
-        var hw  = await Arch.EFCore.CrudNote.Create("hello world", DateTimeOffset.UtcNow);
-        var tn = await Arch.EFCore.CrudNote.Create("test note", DateTimeOffset.UtcNow);
+        var user = await CrudUser.Create("Invoker");
+        var hw  = await Arch.EFCore.CrudNote.Create("hello world", DateTimeOffset.UtcNow,user.Id);
+        var tn = await Arch.EFCore.CrudNote.Create("test note", DateTimeOffset.UtcNow,user.Id);
 
         //Act
         var resultHw = await Arch.EFCore.CrudNote.Read(hw.Id);
@@ -104,8 +120,9 @@ public class CrudNoteTest
     public async Task Read_AnyId_NullNote()
     {
         //Arrange
-        await Arch.EFCore.CrudNote.Create("hello world", DateTimeOffset.UtcNow);
-        await Arch.EFCore.CrudNote.Create("test note", DateTimeOffset.UtcNow);
+        var user = await CrudUser.Create("Invoker");
+        await Arch.EFCore.CrudNote.Create("hello world", DateTimeOffset.UtcNow,user.Id);
+        await Arch.EFCore.CrudNote.Create("test note", DateTimeOffset.UtcNow,user.Id);
 
         //Act
         var resultHw = await Arch.EFCore.CrudNote.Read(321412);
@@ -120,8 +137,9 @@ public class CrudNoteTest
     public async Task Update_NoteWithParams_Success()
     {
         //Arrange
-        var hw= await Arch.EFCore.CrudNote.Create("hello world", DateTimeOffset.UtcNow);
-        var tn = await Arch.EFCore.CrudNote.Create("test note", DateTimeOffset.UtcNow);
+        var user = await CrudUser.Create("Invoker");
+        var hw= await Arch.EFCore.CrudNote.Create("hello world", DateTimeOffset.UtcNow,user.Id);
+        var tn = await Arch.EFCore.CrudNote.Create("test note", DateTimeOffset.UtcNow,user.Id);
 
         //Act
         await Arch.EFCore.CrudNote.Update(hw, "new text",DateTimeOffset.Parse("2026-02-27 14:30:00"));
@@ -137,8 +155,9 @@ public class CrudNoteTest
     public async Task Delete_Note_Success()
     {
         //Arrange
-        var hw = await Arch.EFCore.CrudNote.Create("hello world", DateTimeOffset.UtcNow);
-        var tn = await Arch.EFCore.CrudNote.Create("test note", DateTimeOffset.UtcNow);
+        var user = await CrudUser.Create("Invoker");
+        var hw = await Arch.EFCore.CrudNote.Create("hello world", DateTimeOffset.UtcNow,user.Id);
+        var tn = await Arch.EFCore.CrudNote.Create("test note", DateTimeOffset.UtcNow,user.Id);
         //Act
         await  Arch.EFCore.CrudNote.Delete(hw);
         await Arch.EFCore.CrudNote.Delete(tn);

@@ -4,14 +4,15 @@ namespace Arch.EFCore;
 
 public class CrudNote
 {
-    public static async Task<Note> Create(string text, DateTimeOffset created)
+    public static async Task<Note> Create(string text, DateTimeOffset created, int userId)
     {
         await using var db = new DataContext();
         await db.Database.EnsureCreatedAsync();
         var note = new Note
         {
             Text = text,
-            Created = created
+            Created = created,
+            UserId = userId
         };
         db.Notes.Add(note);
         await db.SaveChangesAsync();
